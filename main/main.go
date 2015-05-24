@@ -38,6 +38,7 @@ func main() {
 	for counter := 0; counter < 3; counter++ {
 		timer <- true
 		time.Sleep(time.Second)
+		fmt.Printf("Next... %d\n", counter)
 	}
 	timer <- false
 

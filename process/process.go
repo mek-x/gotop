@@ -1,6 +1,7 @@
 package process
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,6 +14,19 @@ type Process struct {
 	Cmdline string
 }
 
+func new(pidstr string) (Process, error) {
+	pid, _ := strconv.Atoi(pidstr)
+	bytes, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(bytes) > 0 {
+		return Process{Pid: pid, Cmdline: string(bytes)}, nil
+	} else {
+		return Process{}, errors.New("Can not read process information")
+	}
+}
+
 func (self *Process) String() string {
 	str := "========================="
 
@@ -22,7 +36,7 @@ func (self *Process) String() string {
 	return str
 }
 
-func Gather(res chan<- Process) {
+func Gather(processes chan<- Process) {
 	re, _ := regexp.Compile("^[0-9]+$")
 
 	dir, err := ioutil.ReadDir("/proc/")
@@ -33,13 +47,9 @@ func Gather(res chan<- Process) {
 	for _, direntry := range dir {
 		name := direntry.Name()
 		if re.MatchString(name) {
-			pid, _ := strconv.Atoi(name)
-			bytes, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
-			if err != nil {
-				log.Fatal(err)
-			}
-			if len(bytes) > 0 {
-				res <- Process{Pid: pid, Cmdline: string(bytes)}
+			process, err := new(name)
+			if err == nil {
+				processes <- process
 			}
 		}
 	}
