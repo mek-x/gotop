@@ -13,9 +13,8 @@ import (
 type Process struct {
 	Pid     int
 	Cmdline string
-
-	Count map[string]int
-	debug string
+	Count   map[string]int
+	debug   string
 }
 
 func newError() (Process, error) {
@@ -27,25 +26,17 @@ func new(pidstr string) (Process, error) {
 	process := Process{Pid: pid}
 	var rawIo string
 
-	{
-		err := process.gatherRaw(&rawIo, "/proc/%d/io")
-		if err != nil {
-			return process, err
-		}
+	err1 := process.gatherRaw(&rawIo, "/proc/%d/io")
+	if err1 != nil {
+		return process, err1
 	}
-	{
-		err := process.parseRawIo(rawIo)
-		if err != nil {
-			return process, err
-		}
+	err2 := process.parseRawIo(rawIo)
+	if err2 != nil {
+		return process, err2
 	}
 
-	err := process.gatherRaw(&process.Cmdline, "/proc/%d/cmdline")
-	return process, err
-}
-
-func (self *Process) gatherParseRawIo(rawIo string) error {
-	return nil
+	err3 := process.gatherRaw(&process.Cmdline, "/proc/%d/cmdline")
+	return process, err3
 }
 
 func (self *Process) gatherRaw(what *string, pathf string) error {
@@ -54,8 +45,8 @@ func (self *Process) gatherRaw(what *string, pathf string) error {
 		return err
 	} else {
 		*what = string(bytes)
-		return nil
 	}
+	return nil
 }
 
 func (self *Process) parseRawIo(rawIo string) error {
@@ -77,13 +68,13 @@ func (self *Process) parseRawIo(rawIo string) error {
 func (self *Process) String() string {
 	str := "=========================\n"
 
-	str = str + fmt.Sprintf("PID: %d\n", self.Pid)
-	str = str + fmt.Sprintf("Cmdline: %s\n", self.Cmdline)
+	str += fmt.Sprintf("PID: %d\n", self.Pid)
+	str += fmt.Sprintf("Cmdline: %s\n", self.Cmdline)
 	for key, val := range self.Count {
-		str = str + fmt.Sprintf("%s=%d\n", key, val)
+		str += fmt.Sprintf("%s=%d\n", key, val)
 	}
 	if self.debug != "" {
-		str = str + fmt.Sprintf("debug: %s\n", self.debug)
+		str += fmt.Sprintf("debug: %s\n", self.debug)
 	}
 
 	return str
