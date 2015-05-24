@@ -7,13 +7,15 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type Process struct {
-	Pid      int
-	Cmdline  string
-	rawIo    string
-	firstErr error
+	Pid     int
+	Cmdline string
+
+	Count map[string]int
+	debug string
 }
 
 func newError() (Process, error) {
@@ -23,20 +25,53 @@ func newError() (Process, error) {
 func new(pidstr string) (Process, error) {
 	pid, _ := strconv.Atoi(pidstr)
 	process := Process{Pid: pid}
+	var rawIo string
 
-	process.gatherRaw(&process.Cmdline, "/proc/%d/cmdline")
-	process.gatherRaw(&process.rawIo, "/proc/%d/io")
+	{
+		err := process.gatherRaw(&rawIo, "/proc/%d/io")
+		if err != nil {
+			return process, err
+		}
+	}
+	{
+		err := process.parseRawIo(rawIo)
+		if err != nil {
+			return process, err
+		}
+	}
 
-	return process, process.firstErr
+	err := process.gatherRaw(&process.Cmdline, "/proc/%d/cmdline")
+	return process, err
 }
 
-func (self *Process) gatherRaw(what *string, pathf string) {
+func (self *Process) gatherParseRawIo(rawIo string) error {
+	return nil
+}
+
+func (self *Process) gatherRaw(what *string, pathf string) error {
 	bytes, err := ioutil.ReadFile(fmt.Sprintf(pathf, self.Pid))
-	if err != nil && self.firstErr == nil {
-		self.firstErr = err
+	if err != nil {
+		return err
 	} else {
 		*what = string(bytes)
+		return nil
 	}
+}
+
+func (self *Process) parseRawIo(rawIo string) error {
+	countMap := make(map[string]int)
+	for _, line := range strings.Split(rawIo, "\n") {
+		keyval := strings.Split(line, ": ")
+		if len(keyval) == 2 {
+			count, err := strconv.Atoi(keyval[1])
+			if err != nil {
+				return err
+			}
+			countMap[keyval[0]] = count
+		}
+	}
+	self.Count = countMap
+	return nil
 }
 
 func (self *Process) String() string {
@@ -44,7 +79,12 @@ func (self *Process) String() string {
 
 	str = str + fmt.Sprintf("PID: %d\n", self.Pid)
 	str = str + fmt.Sprintf("Cmdline: %s\n", self.Cmdline)
-	str = str + fmt.Sprintf("rawIo: %s\n", self.rawIo)
+	for key, val := range self.Count {
+		str = str + fmt.Sprintf("%s=%d\n", key, val)
+	}
+	if self.debug != "" {
+		str = str + fmt.Sprintf("debug: %s\n", self.debug)
+	}
 
 	return str
 }
