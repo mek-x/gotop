@@ -13,10 +13,17 @@ type Process struct {
 	Cmdline string
 }
 
+func (self *Process) String() string {
+	str := "========================="
+
+	str = str + fmt.Sprintf("PID: %d\n", self.Pid)
+	str = str + fmt.Sprintf("cmdline: %s\n", self.Cmdline)
+
+	return str
+}
+
 func (self *Process) Print() {
-	fmt.Printf("=====================\n")
-	fmt.Printf("PID: %d\n", self.Pid)
-	fmt.Printf("cmdline: %s\n", self.Cmdline)
+	fmt.Println(self)
 }
 
 func Gather(res chan<- Process) {
