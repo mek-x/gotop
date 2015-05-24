@@ -22,10 +22,6 @@ func (self *Process) String() string {
 	return str
 }
 
-func (self *Process) Print() {
-	fmt.Println(self)
-}
-
 func Gather(res chan<- Process) {
 	re, _ := regexp.Compile("^[0-9]+$")
 

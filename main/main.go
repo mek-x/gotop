@@ -3,45 +3,43 @@ package main
 import (
 	"fmt"
 	"github.com/buetow/gstat/process"
+	"time"
 )
 
-const (
-	STOP    = 0
-	GETPIDS = 1
-)
-
-func gstatGather(action <-chan int, res chan<- process.Process) {
+func gather(timer <-chan bool, processes chan<- process.Process) {
 	for {
-		switch <-action {
-		case STOP:
+		switch <-timer {
+		case false:
 			{
 				break
 			}
-		case GETPIDS:
+		case true:
 			{
-				process.Gather(res)
+				process.Gather(processes)
 			}
 		}
-		close(res)
+	}
+	close(processes)
+}
+
+func receive(processes <-chan process.Process) {
+	for process := range processes {
+		fmt.Println(process)
 	}
 }
 
 func main() {
-	action := make(chan int)
+	timer := make(chan bool)
 	res := make(chan process.Process)
 
-	go gstatGather(action, res)
+	go gather(timer, res)
+	go receive(res)
 
-	action <- GETPIDS
-	for {
-		process, more := <-res
-		if more {
-			process.Print()
-		} else {
-			break
-		}
+	for counter := 0; counter < 3; counter++ {
+		timer <- true
+		time.Sleep(time.Second)
 	}
-	action <- STOP
+	timer <- false
 
 	fmt.Println("Good bye")
 }
