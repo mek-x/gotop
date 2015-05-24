@@ -24,7 +24,7 @@ func gather(timer <-chan bool, processes chan<- process.Process) {
 
 func receive(processes <-chan process.Process) {
 	for process := range processes {
-		fmt.Println(process)
+		process.Print()
 	}
 }
 

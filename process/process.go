@@ -10,30 +10,47 @@ import (
 )
 
 type Process struct {
-	Pid     int
-	Cmdline string
+	Pid      int
+	Cmdline  string
+	rawIo    string
+	firstErr error
+}
+
+func newError() (Process, error) {
+	return Process{}, errors.New("Can not read process information")
 }
 
 func new(pidstr string) (Process, error) {
 	pid, _ := strconv.Atoi(pidstr)
-	bytes, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(bytes) > 0 {
-		return Process{Pid: pid, Cmdline: string(bytes)}, nil
+	process := Process{Pid: pid}
+
+	process.gatherRaw(&process.Cmdline, "/proc/%d/cmdline")
+	process.gatherRaw(&process.rawIo, "/proc/%d/io")
+
+	return process, process.firstErr
+}
+
+func (self *Process) gatherRaw(what *string, pathf string) {
+	bytes, err := ioutil.ReadFile(fmt.Sprintf(pathf, self.Pid))
+	if err != nil && self.firstErr == nil {
+		self.firstErr = err
 	} else {
-		return Process{}, errors.New("Can not read process information")
+		*what = string(bytes)
 	}
 }
 
 func (self *Process) String() string {
-	str := "========================="
+	str := "=========================\n"
 
 	str = str + fmt.Sprintf("PID: %d\n", self.Pid)
-	str = str + fmt.Sprintf("cmdline: %s\n", self.Cmdline)
+	str = str + fmt.Sprintf("Cmdline: %s\n", self.Cmdline)
+	str = str + fmt.Sprintf("rawIo: %s\n", self.rawIo)
 
 	return str
+}
+
+func (self *Process) Print() {
+	fmt.Println(self)
 }
 
 func Gather(processes chan<- Process) {
