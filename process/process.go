@@ -13,6 +13,12 @@ type Process struct {
 	Cmdline string
 }
 
+func (self *Process) Print() {
+	fmt.Printf("=====================\n")
+	fmt.Printf("PID: %d\n", self.Pid)
+	fmt.Printf("cmdline: %s\n", self.Cmdline)
+}
+
 func Gather(res chan<- Process) {
 	re, _ := regexp.Compile("^[0-9]+$")
 
@@ -29,7 +35,9 @@ func Gather(res chan<- Process) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			res <- Process{Pid: pid, Cmdline: string(bytes)}
+			if len(bytes) > 0 {
+				res <- Process{Pid: pid, Cmdline: string(bytes)}
+			}
 		}
 	}
 }

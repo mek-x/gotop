@@ -36,7 +36,7 @@ func main() {
 	for {
 		process, more := <-res
 		if more {
-			fmt.Println(process.Cmdline)
+			process.Print()
 		} else {
 			break
 		}
