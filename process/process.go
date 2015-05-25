@@ -40,7 +40,7 @@ func new(pidstr string) (Process, error) {
 	}
 
 	err = utils.Slurp(&p.Cmdline, fmt.Sprintf("/proc/%d/cmdline", pid))
-	p.Id = pidstr + " " + p.Cmdline
+	p.Id = fmt.Sprintf("(%s) %s", pidstr, p.Cmdline)
 	return p, err
 }
 

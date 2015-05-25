@@ -7,14 +7,13 @@ import (
 	"time"
 )
 
-type twoProcesses struct {
-	flag   bool
+type twoP struct {
 	first  process.Process
 	second process.Process
 }
-type processMap map[string]twoProcesses
+type processMap map[string]twoP
 
-func gather(timerChan <-chan bool, dRxChan chan<- diskstats.Diskstats, pRxChan chan<- process.Process) {
+func timedGather(timerChan <-chan bool, dRxChan chan<- diskstats.Diskstats, pRxChan chan<- process.Process) {
 	for {
 		switch <-timerChan {
 		case false:
@@ -23,8 +22,8 @@ func gather(timerChan <-chan bool, dRxChan chan<- diskstats.Diskstats, pRxChan c
 			}
 		case true:
 			{
-				diskstats.Gather(dRxChan)
-				process.Gather(pRxChan)
+				go diskstats.Gather(dRxChan)
+				go process.Gather(pRxChan)
 			}
 		}
 	}
@@ -40,25 +39,31 @@ func receiveD(dRxChan <-chan diskstats.Diskstats) {
 	}
 }
 
-func compareP() {
-	fmt.Println("Comparing")
+func compareP(lastP processMap) {
+	for _, val := range lastP {
+		fmt.Printf("%d <-> %d\n", val.first.Pid, val.second.Pid)
+	}
 }
 
 func receiveP(pRxChan <-chan process.Process) {
 	lastP := make(processMap)
+	flag := false
+
 	for p := range pRxChan {
 		if p.Last {
-			compareP()
+			if flag {
+				compareP(lastP)
+			}
+			flag = !flag
 		} else {
 			if val, ok := lastP[p.Id]; ok {
-				if val.flag {
-					val.second = p
+				if flag {
+					lastP[p.Id] = twoP{first: val.first, second: p}
 				} else {
-					val.first = p
+					lastP[p.Id] = twoP{first: p, second: val.second}
 				}
-				val.flag = !val.flag
 			} else {
-				lastP[p.Id] = twoProcesses{flag: true, first: p}
+				lastP[p.Id] = twoP{first: p}
 			}
 		}
 	}
@@ -69,13 +74,13 @@ func main() {
 	dRxChan := make(chan diskstats.Diskstats)
 	pRxChan := make(chan process.Process)
 
-	go gather(timerChan, dRxChan, pRxChan)
+	go timedGather(timerChan, dRxChan, pRxChan)
 	go receiveD(dRxChan)
 	go receiveP(pRxChan)
 
-	for counter := 0; counter < 3; counter++ {
+	for counter := 0; counter < 5; counter++ {
 		timerChan <- true
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 1)
 	}
 	timerChan <- false
 
