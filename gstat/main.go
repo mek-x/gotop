@@ -58,6 +58,7 @@ func receiveP(pRxChan <-chan process.Process) {
 	lastP := make(processMap)
 	flag := false
 
+	// TODO: Cleanup lastP for stale PIDs
 	for p := range pRxChan {
 		if p.Last {
 			if flag {
