@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"github.com/buetow/gstat/utils"
 	"io/ioutil"
 	"log"
 	"regexp"
@@ -22,19 +23,19 @@ func new(pidstr string) (Process, error) {
 		return Process{}, err
 	}
 
-	process := Process{Pid: pid}
+	p := Process{Pid: pid}
 	var rawIo string
 
-	if err = process.gatherRaw(&rawIo, "/proc/%d/io"); err != nil {
-		return process, err
+	if err = utils.GatherRaw(&rawIo, fmt.Sprintf("/proc/%d/io", pid)); err != nil {
+		return p, err
 	}
 
-	if err = process.parseRawIo(rawIo); err != nil {
-		return process, err
+	if err = p.parseRawIo(rawIo); err != nil {
+		return p, err
 	}
 
-	err = process.gatherRaw(&process.Cmdline, "/proc/%d/cmdline")
-	return process, err
+	err = utils.GatherRaw(&p.Cmdline, fmt.Sprintf("/proc/%d/cmdline", pid))
+	return p, err
 }
 
 func (self *Process) gatherRaw(what *string, pathf string) error {
@@ -93,9 +94,9 @@ func Gather(processes chan<- Process) {
 	for _, direntry := range dir {
 		name := direntry.Name()
 		if re.MatchString(name) {
-			process, err := new(name)
+			p, err := new(name)
 			if err == nil {
-				processes <- process
+				processes <- p
 			}
 		}
 	}

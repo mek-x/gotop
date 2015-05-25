@@ -2,7 +2,7 @@ package diskstats
 
 import (
 	"fmt"
-	"io/ioutil"
+	"github.com/buetow/gstat/utils"
 )
 
 type Diskstats struct {
@@ -13,21 +13,11 @@ func new() (Diskstats, error) {
 	var raw string
 	d := Diskstats{}
 
-	if err := d.gatherRaw(&raw, "/proc/diskstats"); err != nil {
+	if err := utils.GatherRaw(&raw, "/proc/diskstats"); err != nil {
 		return d, err
 	}
 
 	return d, nil
-}
-
-func (self *Diskstats) gatherRaw(what *string, path string) error {
-	bytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	} else {
-		*what = string(bytes)
-	}
-	return nil
 }
 
 func (self *Diskstats) String() string {
