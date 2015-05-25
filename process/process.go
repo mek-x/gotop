@@ -18,6 +18,7 @@ type Process struct {
 	Cmdline   string
 	Count     map[string]int
 	debug     string
+	Last      bool
 }
 
 func new(pidstr string) (Process, error) {
@@ -89,7 +90,7 @@ func (self *Process) Print() {
 	fmt.Println(self)
 }
 
-func Gather(processes chan<- Process) {
+func Gather(pTxChan chan<- Process) {
 	re, _ := regexp.Compile("^[0-9]+$")
 
 	dir, err := ioutil.ReadDir("/proc/")
@@ -102,8 +103,9 @@ func Gather(processes chan<- Process) {
 		if re.MatchString(name) {
 			p, err := new(name)
 			if err == nil {
-				processes <- p
+				pTxChan <- p
 			}
 		}
 	}
+	pTxChan <- Process{Last: true}
 }
