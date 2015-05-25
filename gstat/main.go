@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"github.com/buetow/gstat/diskstats"
 	"github.com/buetow/gstat/process"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -84,11 +87,19 @@ func main() {
 	go receiveD(dRxChan)
 	go receiveP(pRxChan)
 
-	for counter := 0; counter < 5; counter++ {
+	termChan := make(chan os.Signal, 1)
+	signal.Notify(termChan, os.Interrupt)
+	signal.Notify(termChan, syscall.SIGTERM)
+
+	go func() {
+		<-termChan
+		timerChan <- false
+		fmt.Println("Good bye")
+		os.Exit(1)
+	}()
+
+	for {
 		timerChan <- true
 		time.Sleep(time.Second * 2)
 	}
-	timerChan <- false
-
-	fmt.Println("Good bye")
 }
