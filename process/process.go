@@ -8,13 +8,16 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Process struct {
-	Pid     int
-	Cmdline string
-	Count   map[string]int
-	debug   string
+	Id        string
+	Timestamp int32
+	Pid       int
+	Cmdline   string
+	Count     map[string]int
+	debug     string
 }
 
 func new(pidstr string) (Process, error) {
@@ -23,7 +26,8 @@ func new(pidstr string) (Process, error) {
 		return Process{}, err
 	}
 
-	p := Process{Pid: pid}
+	timestamp := int32(time.Now().Unix())
+	p := Process{Pid: pid, Timestamp: timestamp}
 	var rawIo string
 
 	if err = utils.Slurp(&rawIo, fmt.Sprintf("/proc/%d/io", pid)); err != nil {
@@ -35,6 +39,7 @@ func new(pidstr string) (Process, error) {
 	}
 
 	err = utils.Slurp(&p.Cmdline, fmt.Sprintf("/proc/%d/cmdline", pid))
+	p.Id = pidstr + " " + p.Cmdline
 	return p, err
 }
 
@@ -69,6 +74,7 @@ func (self *Process) String() string {
 
 	str += fmt.Sprintf("PID: %d\n", self.Pid)
 	str += fmt.Sprintf("Cmdline: %s\n", self.Cmdline)
+	str += fmt.Sprintf("Timestamp: %s\n", self.Timestamp)
 	for key, val := range self.Count {
 		str += fmt.Sprintf("%s=%d\n", key, val)
 	}
