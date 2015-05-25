@@ -22,24 +22,24 @@ func newError() (Process, error) {
 }
 
 func new(pidstr string) (Process, error) {
-	pid, err0 := strconv.Atoi(pidstr)
-	if err0 != nil {
-		return Process{}, err0
+	pid, err := strconv.Atoi(pidstr)
+	if err != nil {
+		return Process{}, err
 	}
+
 	process := Process{Pid: pid}
 	var rawIo string
 
-	err1 := process.gatherRaw(&rawIo, "/proc/%d/io")
-	if err1 != nil {
-		return process, err1
-	}
-	err2 := process.parseRawIo(rawIo)
-	if err2 != nil {
-		return process, err2
+	if err = process.gatherRaw(&rawIo, "/proc/%d/io"); err != nil {
+		return process, err
 	}
 
-	err3 := process.gatherRaw(&process.Cmdline, "/proc/%d/cmdline")
-	return process, err3
+	if err = process.parseRawIo(rawIo); err != nil {
+		return process, err
+	}
+
+	err = process.gatherRaw(&process.Cmdline, "/proc/%d/cmdline")
+	return process, err
 }
 
 func (self *Process) gatherRaw(what *string, pathf string) error {
