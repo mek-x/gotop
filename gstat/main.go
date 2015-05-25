@@ -40,8 +40,14 @@ func receiveD(dRxChan <-chan diskstats.Diskstats) {
 }
 
 func compareP(lastP processMap) {
-	for _, val := range lastP {
-		fmt.Printf("%d <-> %d\n", val.first.Pid, val.second.Pid)
+	for id, val := range lastP {
+		first := val.first.Count["syscr"]
+		second := val.second.Count["syscr"]
+		diff := first - second
+		if diff < 0 {
+			diff = -diff
+		}
+		fmt.Printf("%d %s\n", diff, id)
 	}
 }
 
@@ -80,7 +86,7 @@ func main() {
 
 	for counter := 0; counter < 5; counter++ {
 		timerChan <- true
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Second * 2)
 	}
 	timerChan <- false
 
