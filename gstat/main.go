@@ -14,7 +14,7 @@ type twoProcesses struct {
 }
 type processMap map[string]twoProcesses
 
-func gather(timer <-chan bool, d chan<- diskstats.Diskstats, p chan<- process.Process) {
+func gather(timer <-chan bool, dChan chan<- diskstats.Diskstats, pChan chan<- process.Process) {
 	for {
 		switch <-timer {
 		case false:
@@ -23,26 +23,26 @@ func gather(timer <-chan bool, d chan<- diskstats.Diskstats, p chan<- process.Pr
 			}
 		case true:
 			{
-				diskstats.Gather(d)
-				process.Gather(p)
+				diskstats.Gather(dChan)
+				process.Gather(pChan)
 			}
 		}
 	}
-	close(d)
-	close(p)
+	close(dChan)
+	close(pChan)
 }
 
-func receiveD(diskstats <-chan diskstats.Diskstats) {
-	for d := range diskstats {
+func receiveD(dChan <-chan diskstats.Diskstats) {
+	for d := range dChan {
 		//diskstats.Print()
 		// Implemented later
 		_ = d
 	}
 }
 
-func receiveP(processes <-chan process.Process) {
+func receiveP(pChan <-chan process.Process) {
 	lastP := make(processMap)
-	for p := range processes {
+	for p := range pChan {
 		if val, ok := lastP[p.Id]; ok {
 			if val.flag {
 				val.second = p
@@ -58,13 +58,13 @@ func receiveP(processes <-chan process.Process) {
 
 func main() {
 	timer := make(chan bool)
-	diskstats := make(chan diskstats.Diskstats)
-	processes := make(chan process.Process)
+	dChan := make(chan diskstats.Diskstats)
+	pChan := make(chan process.Process)
 
-	go gather(timer, diskstats, processes)
+	go gather(timer, dChan, pChan)
 
-	go receiveD(diskstats)
-	go receiveP(processes)
+	go receiveD(dChan)
+	go receiveP(pChan)
 
 	for counter := 0; counter < 3; counter++ {
 		timer <- true
