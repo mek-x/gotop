@@ -22,7 +22,10 @@ func newError() (Process, error) {
 }
 
 func new(pidstr string) (Process, error) {
-	pid, _ := strconv.Atoi(pidstr)
+	pid, err0 := strconv.Atoi(pidstr)
+	if err0 != nil {
+		return Process{}, err0
+	}
 	process := Process{Pid: pid}
 	var rawIo string
 
