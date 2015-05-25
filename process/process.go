@@ -26,7 +26,7 @@ func new(pidstr string) (Process, error) {
 	p := Process{Pid: pid}
 	var rawIo string
 
-	if err = utils.GatherRaw(&rawIo, fmt.Sprintf("/proc/%d/io", pid)); err != nil {
+	if err = utils.Slurp(&rawIo, fmt.Sprintf("/proc/%d/io", pid)); err != nil {
 		return p, err
 	}
 
@@ -34,7 +34,7 @@ func new(pidstr string) (Process, error) {
 		return p, err
 	}
 
-	err = utils.GatherRaw(&p.Cmdline, fmt.Sprintf("/proc/%d/cmdline", pid))
+	err = utils.Slurp(&p.Cmdline, fmt.Sprintf("/proc/%d/cmdline", pid))
 	return p, err
 }
 

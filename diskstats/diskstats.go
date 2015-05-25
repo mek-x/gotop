@@ -13,7 +13,7 @@ func new() (Diskstats, error) {
 	var raw string
 	d := Diskstats{}
 
-	if err := utils.GatherRaw(&raw, "/proc/diskstats"); err != nil {
+	if err := utils.Slurp(&raw, "/proc/diskstats"); err != nil {
 		return d, err
 	}
 
