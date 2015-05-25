@@ -17,10 +17,6 @@ type Process struct {
 	debug   string
 }
 
-func newError() (Process, error) {
-	return Process{}, errors.New("Can not read process information")
-}
-
 func new(pidstr string) (Process, error) {
 	pid, err := strconv.Atoi(pidstr)
 	if err != nil {
