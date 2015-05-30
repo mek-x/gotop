@@ -14,8 +14,7 @@ import (
 )
 
 var interval time.Duration
-var tWidth int
-var tHeight int
+var banner string
 
 type twoP struct {
 	first  process.Process
@@ -65,33 +64,53 @@ func printP(lastP *mapP) {
 			if sorted.Len() > 0 {
 				for e := sorted.Front(); e != nil; e = e.Next() {
 					diff := e.Value.(twoP).diff
-					if diff >= val.diff {
+					if diff < val.diff {
 						//fmt.Printf("Inserting %d before %d\n", val.diff, diff)
 						sorted.InsertBefore(val, e)
 						break
 					}
 				}
 			} else {
-				sorted.PushBack(val)
+				sorted.PushFront(val)
 			}
 		}
 	}
 
-	fmt.Println("===>")
+	tWidth, tHeight, err := terminal.GetSize(0)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Clear the screen
+	fmt.Println("\033[H\033[2J")
+	fmt.Printf("%5s %5s %s\n", "Value", "PID", "Command")
+
+	// Print the results
+	row := 2
 	for e := sorted.Front(); e != nil; e = e.Next() {
+		row++
+		if row > tHeight {
+			break
+		}
 		val := e.Value.(twoP)
-		outstr := fmt.Sprintf("%d %s", val.diff, val.first.Id)
-		l := len(outstr) - 1
+		outstr := fmt.Sprintf("%5d %5d %s", val.diff, val.first.Pid, val.first.Cmdline)
+		l := len(outstr)
 		if l > tWidth {
 			l = tWidth
 		}
 		fmt.Printf("%s\n", outstr[0:l])
 	}
 
+	// Fill up the other rows
+	for ; row < tHeight; row++ {
+		fmt.Println()
+	}
+	fmt.Printf(banner)
+
 	// Rremove obsolete pids from lastP
 	for e := remove.Front(); e != nil; e = e.Next() {
 		id := e.Value.(twoP).first.Id
-		fmt.Println("STALE: " + id)
+		//fmt.Println("STALE: " + id)
 		delete(*lastP, id)
 	}
 }
@@ -137,11 +156,7 @@ func main() {
 	pRxChan := make(chan process.Process)
 
 	interval = 2
-	width, height, err := terminal.GetSize(0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	tWidth, tHeight = width, height
+	banner = "gstat 0.1 (C) 2015 Paul Buetow <http://github.com/buetow/gstat>"
 
 	go timedGather(timerChan, dRxChan, pRxChan)
 	go receiveD(dRxChan)
