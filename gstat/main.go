@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/buetow/gstat/diskstats"
 	"github.com/buetow/gstat/process"
+	"golang.org/x/crypto/ssh/terminal"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +14,8 @@ import (
 )
 
 var interval time.Duration
+var tWidth int
+var tHeight int
 
 type twoP struct {
 	first  process.Process
@@ -75,7 +79,13 @@ func printP(lastP *mapP) {
 
 	fmt.Println("===>")
 	for e := sorted.Front(); e != nil; e = e.Next() {
-		fmt.Println(e.Value.(twoP).diff)
+		val := e.Value.(twoP)
+		outstr := fmt.Sprintf("%d %s", val.diff, val.first.Id)
+		l := len(outstr) - 1
+		if l > tWidth {
+			l = tWidth
+		}
+		fmt.Printf("%s\n", outstr[0:l])
 	}
 
 	// Rremove obsolete pids from lastP
@@ -125,7 +135,13 @@ func main() {
 	timerChan := make(chan bool)
 	dRxChan := make(chan diskstats.Diskstats)
 	pRxChan := make(chan process.Process)
+
 	interval = 2
+	width, height, err := terminal.GetSize(0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tWidth, tHeight = width, height
 
 	go timedGather(timerChan, dRxChan, pRxChan)
 	go receiveD(dRxChan)
