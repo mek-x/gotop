@@ -36,7 +36,7 @@ func Human(x int) string {
 	return fmt.Sprintf("%d%s", int(f), units[i])
 }
 
-func HumanMebi(x int) string {
+func HumanBinary(x int) string {
 	units := []string{"ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"}
 
 	f := float32(x)
