@@ -11,13 +11,14 @@ import (
 	"time"
 )
 
+var interval time.Duration
+
 type twoP struct {
 	first  process.Process
 	second process.Process
+	diff   int
 }
-type processMap map[string]twoP
-
-var interval time.Duration
+type mapP map[string]twoP
 
 func timedGather(timerChan <-chan bool, dRxChan chan<- diskstats.Diskstats, pRxChan chan<- process.Process) {
 	for {
@@ -45,51 +46,73 @@ func receiveD(dRxChan <-chan diskstats.Diskstats) {
 	}
 }
 
-func compareP(lastP *processMap) {
-	removeItems := list.New()
+func printP(lastP *mapP) {
+	remove := list.New()
+	sorted := list.New()
 
-	for id, val := range *lastP {
+	for _, val := range *lastP {
 		nowTimestamp := int32(time.Now().Unix())
 		if val.first.Timestamp+int32(interval)*2 < nowTimestamp {
 			// Schedule remove obsolete pids from lastP
-			removeItems.PushFront(val.first.Id)
+			remove.PushBack(val.first.Id)
 
-		} else {
-			// Compare
-			first := val.first.Count["syscr"]
-			second := val.second.Count["syscr"]
-			diff := first - second
-			if diff < 0 {
-				diff = -diff
+		} else if val.diff > 0 {
+			// Insertion sort
+			if sorted.Len() > 0 {
+				for e := sorted.Front(); e != nil; e = e.Next() {
+					diff := e.Value.(twoP).diff
+					if diff >= val.diff {
+						//fmt.Printf("Inserting %d before %d\n", val.diff, diff)
+						sorted.InsertBefore(val, e)
+						break
+					}
+				}
+			} else {
+				sorted.PushBack(val)
 			}
-			fmt.Printf("%d %s\n", diff, id)
 		}
 	}
 
+	fmt.Println("===>")
+	for e := sorted.Front(); e != nil; e = e.Next() {
+		fmt.Println(e.Value.(twoP).diff)
+	}
+
 	// Rremove obsolete pids from lastP
-	for e := removeItems.Front(); e != nil; e = e.Next() {
-		id := e.Value.(string)
+	for e := remove.Front(); e != nil; e = e.Next() {
+		id := e.Value.(twoP).first.Id
 		fmt.Println("STALE: " + id)
 		delete(*lastP, id)
 	}
 }
 
 func receiveP(pRxChan <-chan process.Process) {
-	lastP := make(processMap)
+	lastP := make(mapP)
 	flag := false
+
+	makeDiff := func(first, second process.Process) twoP {
+		// TODO: make "syscr" choosable/configurable
+		firstVal := first.Count["syscr"]
+		secondVal := second.Count["syscr"]
+		diff := firstVal - secondVal
+		if diff < 0 {
+			diff = -diff
+		}
+		return twoP{first, second, diff}
+	}
 
 	for p := range pRxChan {
 		if p.Last {
 			if flag {
-				compareP(&lastP)
+				printP(&lastP)
 			}
 			flag = !flag
 		} else {
 			if val, ok := lastP[p.Id]; ok {
 				if flag {
-					lastP[p.Id] = twoP{first: val.first, second: p}
+					lastP[p.Id] = makeDiff(val.first, p)
 				} else {
-					lastP[p.Id] = twoP{first: p, second: val.second}
+					lastP[p.Id] = makeDiff(p, val.second)
 				}
 			} else {
 				lastP[p.Id] = twoP{first: p}
