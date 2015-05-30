@@ -15,20 +15,16 @@ import (
 )
 
 var interval_ time.Duration
-var banner_ string
 
 type twoP struct {
-	first  process.Process
-	second process.Process
-	diff   int
-	diffR  int
-	diffW  int
+	first, second      process.Process
+	diff, diffR, diffW int
 }
 type mapP map[string]twoP
 
-func timedGather(timerChan <-chan bool, dRxChan chan<- diskstats.Diskstats, pRxChan chan<- process.Process) {
+func timedGather(tChan <-chan bool, dRxChan chan<- diskstats.Diskstats, pRxChan chan<- process.Process) {
 	for {
-		switch <-timerChan {
+		switch <-tChan {
 		case false:
 			{
 				break
@@ -109,7 +105,8 @@ func printP(sortedP *list.List) {
 		}
 		val := e.Value.(twoP)
 		first := val.first
-		outstr := fmt.Sprintf("%6s %6s %6d %s", utils.Human(val.diffW), utils.Human(val.diffR), first.Pid, first.Cmdline)
+		humanW, humanR := utils.Human(val.diffW), utils.Human(val.diffR)
+		outstr := fmt.Sprintf("%6s %6s %6d %s", humanW, humanR, first.Pid, first.Cmdline)
 
 		l := len(outstr)
 		if l > tWidth {
@@ -117,12 +114,6 @@ func printP(sortedP *list.List) {
 		}
 		fmt.Printf("%s\n", outstr[0:l])
 	}
-
-	// Fill up the other rows + print banner
-	for ; row < tHeight-1; row++ {
-		fmt.Println()
-	}
-	fmt.Print(banner_)
 }
 
 func receiveP(pRxChan <-chan process.Process) {
@@ -159,14 +150,13 @@ func receiveP(pRxChan <-chan process.Process) {
 }
 
 func main() {
-	timerChan := make(chan bool)
+	tChan := make(chan bool)
 	dRxChan := make(chan diskstats.Diskstats)
 	pRxChan := make(chan process.Process)
 
 	interval_ = 2
-	banner_ = "gstat 0.1"
 
-	go timedGather(timerChan, dRxChan, pRxChan)
+	go timedGather(tChan, dRxChan, pRxChan)
 	go receiveD(dRxChan)
 	go receiveP(pRxChan)
 
@@ -176,13 +166,13 @@ func main() {
 
 	go func() {
 		<-termChan
-		timerChan <- false
+		tChan <- false
 		fmt.Println("Good bye")
 		os.Exit(1)
 	}()
 
 	for {
-		timerChan <- true
+		tChan <- true
 		time.Sleep(time.Second * interval_)
 	}
 }
