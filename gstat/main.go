@@ -14,7 +14,7 @@ import (
 )
 
 var interval time.Duration
-var banner string
+var footer string
 
 type twoP struct {
 	first  process.Process
@@ -49,7 +49,7 @@ func receiveD(dRxChan <-chan diskstats.Diskstats) {
 	}
 }
 
-func printP(lastP *mapP) {
+func sortP(lastP *mapP) *list.List {
 	remove := list.New()
 	sorted := list.New()
 
@@ -76,18 +76,29 @@ func printP(lastP *mapP) {
 		}
 	}
 
+	// Rremove obsolete pids from lastP
+	for e := remove.Front(); e != nil; e = e.Next() {
+		id := e.Value.(twoP).first.Id
+		//fmt.Println("Removing stale process: " + id)
+		delete(*lastP, id)
+	}
+
+	return sorted
+}
+
+func printP(sortedP *list.List) {
 	tWidth, tHeight, err := terminal.GetSize(0)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Clear the screen
+	// Clear the screen + print header
 	fmt.Println("\033[H\033[2J")
 	fmt.Printf("%5s %5s %s\n", "Value", "PID", "Command")
 
 	// Print the results
 	row := 2
-	for e := sorted.Front(); e != nil; e = e.Next() {
+	for e := sortedP.Front(); e != nil; e = e.Next() {
 		row++
 		if row > tHeight {
 			break
@@ -101,18 +112,11 @@ func printP(lastP *mapP) {
 		fmt.Printf("%s\n", outstr[0:l])
 	}
 
-	// Fill up the other rows
+	// Fill up the other rows + print footer
 	for ; row < tHeight; row++ {
 		fmt.Println()
 	}
-	fmt.Printf(banner)
-
-	// Rremove obsolete pids from lastP
-	for e := remove.Front(); e != nil; e = e.Next() {
-		id := e.Value.(twoP).first.Id
-		//fmt.Println("STALE: " + id)
-		delete(*lastP, id)
-	}
+	fmt.Printf(footer)
 }
 
 func receiveP(pRxChan <-chan process.Process) {
@@ -133,7 +137,7 @@ func receiveP(pRxChan <-chan process.Process) {
 	for p := range pRxChan {
 		if p.Last {
 			if flag {
-				printP(&lastP)
+				printP(sortP(&lastP))
 			}
 			flag = !flag
 		} else {
@@ -156,7 +160,7 @@ func main() {
 	pRxChan := make(chan process.Process)
 
 	interval = 2
-	banner = "gstat 0.1 (C) 2015 Paul Buetow <http://github.com/buetow/gstat>"
+	footer = "gstat 0.1 (C) 2015 Paul Buetow <http://github.com/buetow/gstat>"
 
 	go timedGather(timerChan, dRxChan, pRxChan)
 	go receiveD(dRxChan)
