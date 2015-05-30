@@ -107,5 +107,6 @@ func Gather(pTxChan chan<- Process) {
 			}
 		}
 	}
+
 	pTxChan <- Process{Last: true}
 }

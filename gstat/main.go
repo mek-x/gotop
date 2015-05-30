@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/buetow/gstat/diskstats"
 	"github.com/buetow/gstat/process"
+	"github.com/buetow/gstat/utils"
 	"golang.org/x/crypto/ssh/terminal"
 	"log"
 	"os"
@@ -13,13 +14,15 @@ import (
 	"time"
 )
 
-var interval time.Duration
-var footer string
+var interval_ time.Duration
+var banner_ string
 
 type twoP struct {
 	first  process.Process
 	second process.Process
 	diff   int
+	diffR  int
+	diffW  int
 }
 type mapP map[string]twoP
 
@@ -55,7 +58,7 @@ func sortP(lastP *mapP) *list.List {
 
 	for _, val := range *lastP {
 		nowTimestamp := int32(time.Now().Unix())
-		if val.first.Timestamp+int32(interval)*2 < nowTimestamp {
+		if val.first.Timestamp+int32(interval_)*2 < nowTimestamp {
 			// Schedule remove obsolete pids from lastP
 			remove.PushBack(val.first.Id)
 
@@ -87,6 +90,7 @@ func sortP(lastP *mapP) *list.List {
 }
 
 func printP(sortedP *list.List) {
+
 	tWidth, tHeight, err := terminal.GetSize(0)
 	if err != nil {
 		log.Fatal(err)
@@ -94,7 +98,7 @@ func printP(sortedP *list.List) {
 
 	// Clear the screen + print header
 	fmt.Println("\033[H\033[2J")
-	fmt.Printf("%5s %5s %s\n", "Value", "PID", "Command")
+	fmt.Printf("%6s %6s %6s %s\n", "WRITES", "READS", "PID", "COMMAND")
 
 	// Print the results
 	row := 2
@@ -104,7 +108,9 @@ func printP(sortedP *list.List) {
 			break
 		}
 		val := e.Value.(twoP)
-		outstr := fmt.Sprintf("%5d %5d %s", val.diff, val.first.Pid, val.first.Cmdline)
+		first := val.first
+		outstr := fmt.Sprintf("%6s %6s %6d %s", utils.Human(val.diffW), utils.Human(val.diffR), first.Pid, first.Cmdline)
+
 		l := len(outstr)
 		if l > tWidth {
 			l = tWidth
@@ -112,11 +118,11 @@ func printP(sortedP *list.List) {
 		fmt.Printf("%s\n", outstr[0:l])
 	}
 
-	// Fill up the other rows + print footer
-	for ; row < tHeight; row++ {
+	// Fill up the other rows + print banner
+	for ; row < tHeight-1; row++ {
 		fmt.Println()
 	}
-	fmt.Printf(footer)
+	fmt.Print(banner_)
 }
 
 func receiveP(pRxChan <-chan process.Process) {
@@ -124,14 +130,12 @@ func receiveP(pRxChan <-chan process.Process) {
 	flag := false
 
 	makeDiff := func(first, second process.Process) twoP {
-		// TODO: make "syscr" choosable/configurable
-		firstVal := first.Count["syscr"]
-		secondVal := second.Count["syscr"]
-		diff := firstVal - secondVal
-		if diff < 0 {
-			diff = -diff
-		}
-		return twoP{first, second, diff}
+		// TODO: make "rchar,wchar" configurable
+		firstValR, firstValW := first.Count["rchar"], first.Count["wchar"]
+		secondValR, secondValW := second.Count["rchar"], second.Count["wchar"]
+		diffR, diffW := utils.Abs(firstValR-secondValR), utils.Abs(firstValW-secondValW)
+		diff := diffR + diffW
+		return twoP{first, second, diff, diffR, diffW}
 	}
 
 	for p := range pRxChan {
@@ -159,8 +163,8 @@ func main() {
 	dRxChan := make(chan diskstats.Diskstats)
 	pRxChan := make(chan process.Process)
 
-	interval = 2
-	footer = "gstat 0.1 (C) 2015 Paul Buetow <http://github.com/buetow/gstat>"
+	interval_ = 2
+	banner_ = "gstat 0.1"
 
 	go timedGather(timerChan, dRxChan, pRxChan)
 	go receiveD(dRxChan)
@@ -179,6 +183,6 @@ func main() {
 
 	for {
 		timerChan <- true
-		time.Sleep(time.Second * interval)
+		time.Sleep(time.Second * interval_)
 	}
 }
