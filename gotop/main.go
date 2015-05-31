@@ -200,7 +200,7 @@ func receiveP(pRxChan <-chan process.Process) {
 
 func parseFlags() {
 	helpF := flag.Bool("v", false, "Print the version")
-	interF := flag.Int("i", 2, "Update interval in seconds")
+	interF := flag.Int("i", 1, "Update interval in seconds")
 
 	config.binary = flag.Bool("b", false, "Use binary instead of decimal (e.g. kiB an not kB)")
 	config.mode = flag.Int("m", 1, "The stats mode: 0:bytes 1:syscalls 2:chars")
