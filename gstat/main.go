@@ -4,6 +4,7 @@ package main
 
 import (
 	"container/list"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/buetow/gstat/diskstats"
@@ -133,21 +134,28 @@ func printP(sortedP *list.List) {
 	}
 }
 
+func modeNames() (string, string, string, error) {
+	switch *config.mode {
+	case 0:
+		return "read_bytes", "write_bytes", "bytes", nil
+	case 1:
+		return "syscr", "syscw", "syscalls", nil
+	case 2:
+		return "rchar", "wchar", "chars", nil
+	}
+
+	errstr := fmt.Sprintf("No such mode: %d\n", *config.mode)
+	return "", "", "", errors.New(errstr)
+}
+
 func receiveP(pRxChan <-chan process.Process) {
 	lastP := make(mapP)
 	flag := false
 
-	var readKey, writeKey, modeName string
-
-	switch *config.mode {
-	case 0:
-		readKey, writeKey, modeName = "read_bytes", "write_bytes", "bytes"
-	case 1:
-		readKey, writeKey, modeName = "syscr", "syscw", "syscalls"
-	case 2:
-		readKey, writeKey, modeName = "rchar", "wchar", "chars"
+	readKey, writeKey, modeName, err := modeNames()
+	if err != nil {
+		log.Fatal(err)
 	}
-
 	config.modeName = modeName
 
 	makeDiff := func(first, second process.Process) twoP {
@@ -218,7 +226,7 @@ func main() {
 		tChan <- false
 		fmt.Println("Good bye! This was:")
 		fmt.Println(config.banner)
-		os.Exit(1)
+		os.Exit(0)
 	}()
 
 	for {
