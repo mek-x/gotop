@@ -1,4 +1,4 @@
-// gstat (C) 2015 Paul Buetow (gstat@dev.buetow.org)
+// gotop (C) 2015 Paul Buetow (gotop@dev.buetow.org)
 
 package main
 
@@ -7,9 +7,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/buetow/gstat/diskstats"
-	"github.com/buetow/gstat/process"
-	"github.com/buetow/gstat/utils"
+	"github.com/buetow/gotop/diskstats"
+	"github.com/buetow/gotop/process"
+	"github.com/buetow/gotop/utils"
 	"golang.org/x/crypto/ssh/terminal"
 	"log"
 	"os"
@@ -207,7 +207,7 @@ func parseFlags() {
 
 	flag.Parse()
 
-	config.banner = "gstat v0.1 (C) 2015 Paul buetow <http://gstat.buetow.org>"
+	config.banner = "gotop v0.1 (C) 2015 Paul buetow <http://gotop.buetow.org>"
 
 	if *helpF {
 		fmt.Println(config.banner)
