@@ -24,7 +24,7 @@ func Abs(x int) int {
 }
 
 func Human(x int) string {
-	units := []string{"kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
+	units := []string{"k", "M", "G", "T", "P", "E", "Z", "Y"}
 
 	f := float32(x)
 	i := 0
@@ -37,7 +37,7 @@ func Human(x int) string {
 }
 
 func HumanBinary(x int) string {
-	units := []string{"ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"}
+	units := []string{"k", "M", "G", "T", "P", "E", "Z", "Y"}
 
 	f := float32(x)
 	i := 0

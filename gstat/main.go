@@ -22,6 +22,7 @@ var config struct {
 	interval time.Duration
 	binary   *bool
 	mode     *int
+	modeName string
 }
 
 type twoP struct {
@@ -62,7 +63,7 @@ func sortP(lastP *mapP) *list.List {
 
 	for _, val := range *lastP {
 		nowTimestamp := int32(time.Now().Unix())
-		if val.first.Timestamp+int32(config.interval)*2 < nowTimestamp {
+		if val.first.Timestamp+2 < nowTimestamp {
 			// Schedule remove obsolete pids from lastP
 			remove.PushBack(val.first.Id)
 
@@ -94,7 +95,6 @@ func sortP(lastP *mapP) *list.List {
 }
 
 func printP(sortedP *list.List) {
-
 	tWidth, tHeight, err := terminal.GetSize(0)
 	if err != nil {
 		log.Fatal(err)
@@ -102,11 +102,12 @@ func printP(sortedP *list.List) {
 
 	// Clear the screen + print header
 	fmt.Printf("\033[H\033[2J")
+	fmt.Printf("Mode: %s, Interval: %s\n", config.modeName, config.interval)
 	fmt.Printf("(Hit Ctr-C to quit, re-run with -h for flags)\n")
-	fmt.Printf("%6s %6s %6s %s\n", "WRITES", "READS", "PID", "COMMAND")
+	fmt.Printf("%5s/%5s %5s %s\n", "WRITE", "READS", "PID", "COMMAND")
 
 	// Print the results
-	row := 2
+	row := 3
 	for e := sortedP.Front(); e != nil; e = e.Next() {
 		row++
 		if row > tHeight {
@@ -122,7 +123,7 @@ func printP(sortedP *list.List) {
 			humanW, humanR = utils.Human(val.diffW), utils.Human(val.diffR)
 		}
 
-		outstr := fmt.Sprintf("%6s %6s %6d %s", humanW, humanR, first.Pid, first.Cmdline)
+		outstr := fmt.Sprintf("%5s %5s %5d %s", humanW, humanR, first.Pid, first.Cmdline)
 
 		l := len(outstr)
 		if l > tWidth {
@@ -136,10 +137,23 @@ func receiveP(pRxChan <-chan process.Process) {
 	lastP := make(mapP)
 	flag := false
 
+	var readKey, writeKey, modeName string
+
+	switch *config.mode {
+	case 0:
+		readKey, writeKey, modeName = "read_bytes", "write_bytes", "bytes"
+	case 1:
+		readKey, writeKey, modeName = "syscr", "syscw", "syscalls"
+	case 2:
+		readKey, writeKey, modeName = "rchar", "wchar", "chars"
+	}
+
+	config.modeName = modeName
+
 	makeDiff := func(first, second process.Process) twoP {
 		// TODO: make "rchar,wchar" configurable
-		firstValR, firstValW := first.Count["rchar"], first.Count["wchar"]
-		secondValR, secondValW := second.Count["rchar"], second.Count["wchar"]
+		firstValR, firstValW := first.Count[readKey], first.Count[writeKey]
+		secondValR, secondValW := second.Count[readKey], second.Count[writeKey]
 		diffR, diffW := utils.Abs(firstValR-secondValR), utils.Abs(firstValW-secondValW)
 		diff := diffR + diffW
 		return twoP{first, second, diff, diffR, diffW}
@@ -170,7 +184,7 @@ func parseFlags() {
 	interF := flag.Int("i", 2, "Update interval in seconds")
 
 	config.binary = flag.Bool("b", false, "Use binary instead of deciman (e.g. kiB an not kB")
-	config.mode = flag.Int("m", 0, "The stats mode: 0:bytes 1:syscalls 2:chars")
+	config.mode = flag.Int("m", 1, "The stats mode: 0:bytes 1:syscalls 2:chars")
 
 	flag.Parse()
 
@@ -181,7 +195,7 @@ func parseFlags() {
 		os.Exit(0)
 	}
 
-	config.interval = time.Duration(*interF)
+	config.interval = time.Duration(*interF) * time.Second
 }
 
 func main() {
@@ -209,6 +223,6 @@ func main() {
 
 	for {
 		tChan <- true
-		time.Sleep(time.Second * config.interval)
+		time.Sleep(config.interval)
 	}
 }
