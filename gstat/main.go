@@ -87,7 +87,7 @@ func sortP(lastP *mapP) *list.List {
 
 	// Rremove obsolete pids from lastP
 	for e := remove.Front(); e != nil; e = e.Next() {
-		id := e.Value.(twoP).first.Id
+		id := e.Value.(string)
 		//fmt.Println("Removing stale process: " + id)
 		delete(*lastP, id)
 	}
@@ -159,7 +159,6 @@ func receiveP(pRxChan <-chan process.Process) {
 	config.modeName = modeName
 
 	makeDiff := func(first, second process.Process) twoP {
-		// TODO: make "rchar,wchar" configurable
 		firstValR, firstValW := first.Count[readKey], first.Count[writeKey]
 		secondValR, secondValW := second.Count[readKey], second.Count[writeKey]
 		diffR, diffW := utils.Abs(firstValR-secondValR), utils.Abs(firstValW-secondValW)
