@@ -29,6 +29,7 @@ var config struct {
 type twoP struct {
 	first, second      process.Process
 	diff, diffR, diffW int
+	exited             bool
 }
 type mapP map[string]twoP
 
@@ -67,8 +68,11 @@ func sortP(lastP *mapP) *list.List {
 		if val.first.Timestamp+2 < nowTimestamp {
 			// Schedule remove obsolete pids from lastP
 			remove.PushBack(val.first.Id)
+			// Display this process one more time, but in a fancy way
+			val.exited = true
+		}
 
-		} else if val.diff > 0 {
+		if val.diff > 0 {
 			// Insertion sort
 			if sorted.Len() > 0 {
 				for e := sorted.Front(); e != nil; e = e.Next() {
@@ -117,14 +121,22 @@ func printP(sortedP *list.List) {
 		val := e.Value.(twoP)
 		first := val.first
 
-		var humanW, humanR string
-		if *config.binary {
-			humanW, humanR = utils.HumanBinary(val.diffW), utils.HumanBinary(val.diffR)
-		} else {
-			humanW, humanR = utils.Human(val.diffW), utils.Human(val.diffR)
-		}
+		var outstr string
 
-		outstr := fmt.Sprintf("%5s %5s %5d %s", humanW, humanR, first.Pid, first.Cmdline)
+		if val.exited {
+			outstr = fmt.Sprintf("XXXXXXXXXXX %5d %s", first.Pid, first.Cmdline)
+
+		} else {
+			var humanW, humanR string
+
+			if *config.binary {
+				humanW, humanR = utils.HumanBinary(val.diffW), utils.HumanBinary(val.diffR)
+			} else {
+				humanW, humanR = utils.Human(val.diffW), utils.Human(val.diffR)
+			}
+
+			outstr = fmt.Sprintf("%5s %5s %5d %s", humanW, humanR, first.Pid, first.Cmdline)
+		}
 
 		l := len(outstr)
 		if l > tWidth {
@@ -163,7 +175,7 @@ func receiveP(pRxChan <-chan process.Process) {
 		secondValR, secondValW := second.Count[readKey], second.Count[writeKey]
 		diffR, diffW := utils.Abs(firstValR-secondValR), utils.Abs(firstValW-secondValW)
 		diff := diffR + diffW
-		return twoP{first, second, diff, diffR, diffW}
+		return twoP{first, second, diff, diffR, diffW, false}
 	}
 
 	for p := range pRxChan {
