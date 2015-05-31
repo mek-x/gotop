@@ -207,7 +207,7 @@ func parseFlags() {
 
 	flag.Parse()
 
-	config.banner = "gotop v0.1 (C) 2015 Paul buetow <http://gotop.buetow.org>"
+	config.banner = "gotop v0.1 (C) 2015 Paul Buetow <https://gotop.buetow.org>"
 
 	if *helpF {
 		fmt.Println(config.banner)
