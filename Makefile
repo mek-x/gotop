@@ -1,7 +1,7 @@
 install:
 	go install github.com/buetow/gotop/gotop
 run:
-	go run gotop/main.go
+	go run gotop/main.go -m=2
 docu: install
 	sh -c '($(GOPATH)/bin/gotop -h 2>&1)|sed 1d > help.txt;exit 0'
 cross:
