@@ -65,7 +65,8 @@ func sortP(lastP *mapP) *list.List {
 
 	for _, val := range *lastP {
 		nowTimestamp := int32(time.Now().Unix())
-		if val.first.Timestamp+4 < nowTimestamp {
+		seconds := int32(config.interval.Seconds())
+		if val.first.Timestamp+seconds < nowTimestamp {
 			// Schedule remove obsolete pids from lastP
 			remove.PushBack(val.first.Id)
 			// Display this process one more time, but in a fancy way
@@ -176,7 +177,7 @@ func receiveP(pRxChan <-chan process.Process) {
 		secondValR, secondValW := second.Count[readKey], second.Count[writeKey]
 		diffR, diffW := utils.Abs(firstValR-secondValR), utils.Abs(firstValW-secondValW)
 
-		// Calculate averages
+		// Calculate averages, so we have always per second valus
 		diff := int(float64(diffR+diffW) / seconds)
 		diffR = int(float64(diffR) / seconds)
 		diffW = int(float64(diffW) / seconds)
