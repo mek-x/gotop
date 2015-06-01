@@ -169,12 +169,18 @@ func receiveP(pRxChan <-chan process.Process) {
 		log.Fatal(err)
 	}
 	config.modeName = modeName
+	seconds := config.interval.Seconds()
 
 	makeDiff := func(first, second process.Process) twoP {
 		firstValR, firstValW := first.Count[readKey], first.Count[writeKey]
 		secondValR, secondValW := second.Count[readKey], second.Count[writeKey]
 		diffR, diffW := utils.Abs(firstValR-secondValR), utils.Abs(firstValW-secondValW)
-		diff := diffR + diffW
+
+		// Calculate averages
+		diff := int(float64(diffR+diffW) / seconds)
+		diffR = int(float64(diffR) / seconds)
+		diffW = int(float64(diffW) / seconds)
+
 		return twoP{first, second, diff, diffR, diffW, false}
 	}
 
