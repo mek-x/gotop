@@ -65,7 +65,7 @@ func sortP(lastP *mapP) *list.List {
 
 	for _, val := range *lastP {
 		nowTimestamp := int32(time.Now().Unix())
-		if val.first.Timestamp+2 < nowTimestamp {
+		if val.first.Timestamp+4 < nowTimestamp {
 			// Schedule remove obsolete pids from lastP
 			remove.PushBack(val.first.Id)
 			// Display this process one more time, but in a fancy way
