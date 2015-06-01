@@ -10,7 +10,13 @@ func Slurp(what *string, path string) error {
 	if err != nil {
 		return err
 	} else {
-		*what = string(bytes)
+		for _, byte := range bytes {
+			if byte == 0 {
+				*what += " "
+			} else {
+				*what += string(byte)
+			}
+		}
 	}
 	return nil
 }
