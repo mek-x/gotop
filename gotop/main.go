@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"os/user"
 	"syscall"
 	"time"
 )
@@ -246,6 +247,16 @@ func main() {
 		fmt.Println(config.banner)
 		os.Exit(0)
 	}()
+
+	user, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if user.Username != "root" {
+		fmt.Println("Warning: You are not root, so you will not see everything!")
+		time.Sleep(time.Duration(2) * time.Second)
+	}
 
 	for {
 		tChan <- true
