@@ -15,6 +15,7 @@ type Process struct {
 	Id        string
 	Timestamp int32
 	Pid       int
+	Comm      string
 	Cmdline   string
 	Count     map[string]int
 	debug     string
@@ -39,8 +40,18 @@ func new(pidstr string) (Process, error) {
 		return p, err
 	}
 
+	if err = utils.Slurp(&p.Comm, fmt.Sprintf("/proc/%d/comm", pid)); err != nil {
+		return p, err
+	}
+
 	err = utils.Slurp(&p.Cmdline, fmt.Sprintf("/proc/%d/cmdline", pid))
-	p.Id = fmt.Sprintf("(%s) %s", pidstr, p.Cmdline)
+
+	if p.Cmdline == "" {
+		p.Id = fmt.Sprintf("(%s) %s", pidstr, p.Comm)
+	} else {
+		p.Id = fmt.Sprintf("(%s) %s", pidstr, p.Cmdline)
+	}
+
 	return p, err
 }
 
@@ -56,6 +67,7 @@ func (self *Process) gatherRaw(what *string, pathf string) error {
 
 func (self *Process) parseRawIo(rawIo string) error {
 	countMap := make(map[string]int)
+
 	for _, line := range strings.Split(rawIo, "\n") {
 		keyval := strings.Split(line, ": ")
 		if len(keyval) == 2 {
@@ -67,6 +79,7 @@ func (self *Process) parseRawIo(rawIo string) error {
 		}
 	}
 	self.Count = countMap
+
 	return nil
 }
 
@@ -74,8 +87,10 @@ func (self *Process) String() string {
 	str := "=========================\n"
 
 	str += fmt.Sprintf("PID: %d\n", self.Pid)
+	str += fmt.Sprintf("Comm: %s\n", self.Comm)
 	str += fmt.Sprintf("Cmdline: %s\n", self.Cmdline)
 	str += fmt.Sprintf("Timestamp: %s\n", self.Timestamp)
+
 	for key, val := range self.Count {
 		str += fmt.Sprintf("%s=%d\n", key, val)
 	}
