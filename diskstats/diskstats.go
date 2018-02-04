@@ -2,7 +2,7 @@ package diskstats
 
 import (
 	"fmt"
-	"github.com/buetow/gotop/utils"
+	"github.com/snonux/gotop/utils"
 )
 
 type Diskstats struct {

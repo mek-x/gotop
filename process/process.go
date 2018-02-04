@@ -2,7 +2,7 @@ package process
 
 import (
 	"fmt"
-	"github.com/buetow/gotop/utils"
+	"github.com/snonux/gotop/utils"
 	"io/ioutil"
 	"log"
 	"regexp"

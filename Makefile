@@ -1,5 +1,5 @@
 install:
-	go install github.com/buetow/gotop/gotop
+	go install github.com/snonux/gotop/gotop
 run:
 	go run gotop/main.go -m=2
 docu: install
