@@ -2,7 +2,7 @@ package process
 
 import (
 	"fmt"
-	"github.com/snonux/gotop/utils"
+	"github.com/mek-x/gotop/utils"
 	"io/ioutil"
 	"log"
 	"regexp"
