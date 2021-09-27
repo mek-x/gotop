@@ -7,16 +7,16 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/snonux/gotop/diskstats"
-	"github.com/snonux/gotop/process"
-	"github.com/snonux/gotop/utils"
-	"golang.org/x/crypto/ssh/terminal"
 	"log"
 	"os"
 	"os/signal"
 	"os/user"
 	"syscall"
 	"time"
+	"golang.org/x/crypto/ssh/terminal"
+	"github.com/mek-x/gotop/diskstats"
+	"github.com/mek-x/gotop/process"
+	"github.com/mek-x/gotop/utils"
 )
 
 var config struct {

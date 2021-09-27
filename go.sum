@@ -1,5 +1,3 @@
-github.com/snonux/gotop v0.0.0-20180204205608-1e93269065a9 h1:y7izn1fzodyawUMjGARlBaw/SY2Sh+8tj5VzCk4paHM=
-github.com/snonux/gotop v0.0.0-20180204205608-1e93269065a9/go.mod h1:XlwDNNB3+MfumjlG2yaixT7v02BKeorxk+aij77npRY=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 h1:7I4JAnoQBe7ZtJcBaYHi5UtiO8tQHbUSXxL+pnGRANg=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
